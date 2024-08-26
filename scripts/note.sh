@@ -108,18 +108,19 @@ function getdummykey()
 
 function encrypt()
 {
-    local salt value
+    local salt value_hex
 
     salt="$1"
     shift
-    value="$1"
+    value_hex="$1"
+
 
     local key iv data hmac
     key="$(getkey "${salt}")"
 
 
     iv="$(openssl rand -hex 16 )"
-    data="$(openssl enc -a -e -aes-256-ctr -nopad -K "${key}" -iv "${iv}" <<< "${value}" | sed -n 'H;${x;s/\n//g;p}')"
+    data="$(xxd -r -p <<< "${value_hex}" | openssl enc -a -e -aes-256-ctr -nopad -K "${key}" -iv "${iv}"  | sed -n 'H;${x;s/\n//g;p}')"
     hmac="$(openssl mac -digest SHA256 -macopt "hexkey:${key}" HMAC <<< "${data}")"
 
     echo "${iv}${hmac}${data}"
@@ -127,14 +128,14 @@ function encrypt()
 
 function encrypt_entry()
 {
-    local salt label value
+    local salt label value_hex
     salt="$1"
     shift
     label="$1"
     shift
-    value="$*"
+    value_hex="$(xxd -p <<< "${*}")"
 
-    cipher_text=$(encrypt "${salt}" "${value}")
+    cipher_text=$(encrypt "${salt}" "${value_hex}")
 
     echo "${label}::${cipher_text}"
 }
