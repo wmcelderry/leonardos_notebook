@@ -34,7 +34,7 @@ I'm also interested to move it to a keyring based implementation, but haven't ye
 
 
 # Forgotten a password?
-I can totally tell you your password, just email me... and give me all the computer resources until the end of time, plus a bit longer.  Now I write it like that, it may be better to not forget your password, or only use it for information you are OK losing!
+I can totally tell you your password, just email me... and give me all the computer resources until the end of time, plus a bit longer.  Now I write it out loud, it may be better if you don't forget your password, or only use it for information you are OK losing!
 
 
 # Possible Improvement in operation?
