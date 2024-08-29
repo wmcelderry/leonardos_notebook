@@ -8,9 +8,10 @@ function usage()
 ${BASH_SOURCE[0]} <mode> <label> [<value...>]
 
   mode is one of:
-    store <label> <value...>
-    retrieve <label>
-    dummy <label>
+    "store"|"s"     <label> <value...>
+    "retrieve"|"r"  <label>
+    "del"|"rm"      <label>
+    "change_password"|"cpw"
 EOF
 }
 
@@ -25,29 +26,12 @@ notebook_file="${base_dir}/data/my_primary_notebook"
 
 
 
-function dummy()
-{
-    #ensure any matching label is deleted.
-    if [[ -e "${notebook_file}" ]] ; then
-        sed -i "/^${label}::/d" "${notebook_file}"
-    else
-        #put the KDF salt in the notebook_file.
-        openssl rand -hex 16 > "${notebook_file}"
-    fi
-
-    salt="$(retrieve_salt "${notebook_file}")"
-
-    #append the new value
-    dummy_entry "${salt}" "${label}" "${value}" >> "${notebook_file}"
-}
-
-
 function create_notebook_file()
 {
     local file="${1}"
     local primary_key_hex="$(openssl rand -hex 32)"
 
-    set_password "${primary_key_hex}" >> "${file}"
+    gen_password_line "${primary_key_hex}" >> "${file}"
 
     echo "${primary_key_hex}"
 }
@@ -65,7 +49,7 @@ function change_password()
     fi
 
     echo "Enter new password for future operation:"
-    local password_line="$(set_password "${primary_key_hex}")"
+    local password_line="$(gen_password_line "${primary_key_hex}")"
 
     # confirm the password to ensure it can be unlocked!
     echo "Re-enter the new password to confirm correct spelling!"
@@ -79,7 +63,7 @@ function change_password()
 }
 
 
-function set_password()
+function gen_password_line()
 {
     local primary_key_hex="$1"
 
@@ -87,12 +71,9 @@ function set_password()
     salt="$(openssl rand -hex 16)"
 
     echo  -n "${salt}"
-    #store the primary key, protected by the primary password
 
-    #encrypt the primary key with AES:
+    #store the primary key, protected by the password
     encrypt "${salt}" "${primary_key_hex}"
-
-    #echo "${primary_key_hex}"
 }
 
 function delete_entry()
@@ -171,12 +152,6 @@ function getkey()
         | sed 's/://g'
 }
 
-function getdummykey()
-{
-    #256bit key:
-    openssl rand -hex 32
-}
-
 function encrypt()
 {
     local salt value_hex
@@ -250,23 +225,6 @@ function encrypt_entry()
 
     echo "${label}::${cipher_text}"
 }
-
-function dummy_entry()
-{
-    salt="$1"
-    shift
-    label="$1"
-    shift
-    value="$*"
-
-    key="$(getdummykey)" # just use random data as the key!
-    iv="$(openssl rand -hex 16 )"
-    data="$(openssl enc -a -e -aes-256-ctr -nopad -K "${key}" -iv "${iv}" <<< "${value}")"
-    hmac="$(openssl mac -digest SHA256 -macopt "hexkey:${key}" HMAC <<< "${data}")"
-
-    echo "${label}::${iv}${hmac}${data}"
-}
-
 
 
 function decrypt_using_key()
@@ -357,13 +315,15 @@ case "${mode}" in
     retrieve )
         retrieve
         ;;
-    dummy )
-        dummy
-        ;;
     cpw )
         ;&
     change_password )
         change_password
+        ;;
+    del )
+        ;&
+    rm )
+        delete_entry "${label}" "${notebook_file}"
         ;;
     * )
         usage
