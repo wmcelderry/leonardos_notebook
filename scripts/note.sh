@@ -12,6 +12,13 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
     "retrieve"|"r"  <label>
     "del"|"rm"      <label>
     "change_password"|"cpw"
+    "list"|"l"
+
+  Store adds a new entry
+  retrieve recovers an entry
+  del or rm removes an entry
+  change_password allows changing the password
+  list lists the entries
 EOF
 }
 
@@ -304,6 +311,11 @@ function retrieve_pkey_from_line()
     decrypt_entry "${salt}" "${entry}" | xxd -p  | mk_one_line
 }
 
+function list_entries()
+{
+    sed '1d;s/^\(.\+\)::.*$/\1/' "${notebook_file}"
+}
+
 case "${mode}" in
     s )
         ;&
@@ -324,6 +336,12 @@ case "${mode}" in
         ;&
     rm )
         delete_entry "${label}" "${notebook_file}"
+        ;;
+
+    l )
+        ;&
+    list )
+        list_entries
         ;;
     * )
         usage
