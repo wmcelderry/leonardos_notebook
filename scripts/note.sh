@@ -57,25 +57,25 @@ function change_password()
     local file="${notebook_file}"
 
     destroy_keyring
-    echo "Unlocking the key material:"
+    echo "Unlocking the key material:" >&2
     local primary_key_hex="$(retrieve_pkey "${file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
-        echo "Failed to unlock the key."
+        echo "Failed to unlock the key." >&2
         return
     fi
 
     destroy_keyring
-    echo "Enter new password for future operation:"
+    echo "Enter new password for future operation:" >&2
     local password_line="$(gen_password_line "${primary_key_hex}")"
 
     # confirm the password to ensure it can be unlocked!
     destroy_keyring
-    echo "Re-enter the new password to confirm correct spelling!"
+    echo "Re-enter the new password to confirm correct spelling!" >&2
     local conf_pkey="$(retrieve_pkey_from_line "${password_line}")"
 
     if [[ "${conf_pkey,,*}" != "${primary_key_hex,,*}" ]] ; then
-        echo "New passwords do not match!"
+        echo "New passwords do not match!" >&2
     else
         sed -i "1s!.*!${password_line}!g" "${file}"
     fi
@@ -87,7 +87,7 @@ function gen_password_line()
     local primary_key_hex="$1"
 
     #put the KDF salt and primary key in the notebook_file.
-    salt="$(openssl rand -hex 16)"
+    local salt="$(openssl rand -hex 16)"
 
     echo  -n "${salt}"
 
@@ -113,7 +113,7 @@ function store()
         delete_entry "${label}" "${notebook_file}"
         primary_key_hex="$(retrieve_pkey "${notebook_file}")"
         if [[ -z "${primary_key_hex}" ]] ; then
-            echo "Incorrect key for encrypting."
+            echo "Incorrect key for encrypting." >&2
             return
         fi
     else
@@ -203,8 +203,6 @@ function encrypt()
     shift
     value_hex="$1"
 
-    #echo "Salt: ${salt}" >&2
-
     local key="$(getkey "${salt}")"
 
     encrypt_using_key "${key}" "${value_hex}"
@@ -230,13 +228,11 @@ function encrypt_using_key()
         echo "Key too short, length ${#key}" >&2
         return
     fi
-    #echo "KEY: ${key}" >&2
+
     iv="$(openssl rand -hex 16 )"
-    #echo "IV: ${iv}" >&2
+
     data="$(xxd -r -p <<< "${value_hex}" | openssl enc -a -e -aes-256-ctr -nopad -K "${key}" -iv "${iv}" | mk_one_line)"
-    #echo "data: ${data}" >&2
     hmac="$(openssl mac -digest SHA256 -macopt "hexkey:${key}" HMAC <<< "${data}")"
-    #echo "MAC: ${hmac}" >&2
 
     echo "$(xxd -r -p <<< "${iv}${hmac}" | base64 | mk_one_line)${data}"
 }
