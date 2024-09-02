@@ -44,5 +44,8 @@ To avoid having labels that could leak information, operation could be modified 
 ## Avoid losing the keys?
 To ensure that a key cannot be lost, you could export the raw key.
 
-## Allow changing passwords trivially
-Like the salt stored at the top of the file, there could also be a wrapped master key, protected with the actual password in use.  The master key could then be decrypted with the old password and re-encrypted with the new password to quickly change the password, without compromising security.
+
+# FAQ
+
+## 1. What's with the name 'Leonardo's Notebook'?
+Leonardo Da Vinci used mirror writing in his notebook, possibly to keep his notes secret.  That's what this does.  Like his, this implementation may also be imperfect...
