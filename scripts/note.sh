@@ -10,15 +10,20 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
   mode is one of:
     "store"|"s"     <label> <value...>
     "retrieve"|"r"  <label>
+    "paste"|"p"     <label>
+    "totp"|"t"      <lavel>
     "del"|"rm"      <label>
     "change_password"|"cpw"
     "list"|"l"
 
-  Store adds a new entry
-  retrieve recovers an entry
-  del or rm removes an entry
-  change_password allows changing the password
-  list lists the entries
+  store     adds a new entry
+  retrieve  recovers an entry
+  paste     recovers an entry to the clipboard.
+  totp      recovers an entry, uses it as input for oathtool totp and puts that on the clipboard.
+  rm        removes an entry
+  change_password
+            allows changing the password
+  list      lists the entries
 EOF
 }
 
@@ -362,6 +367,17 @@ case "${mode}" in
         delete_entry "${label}" "${notebook_file}"
         ;;
 
+    p )
+        ;&
+    paste )
+        retrieve "$@" | xclip -i -selection clipboard -l 1 -quiet
+        ;;
+
+    t )
+        ;&
+    totp )
+        oathtool --totp --base32 "$(retrieve "$@" )" | xclip -i -selection clipboard -l 1 -quiet
+        ;;
     l )
         ;&
     list )
