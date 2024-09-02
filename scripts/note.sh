@@ -56,7 +56,8 @@ function change_password()
 {
     local file="${notebook_file}"
 
-    echo "Enter existing password to unlock the key material:"
+    destroy_keyring
+    echo "Unlocking the key material:"
     local primary_key_hex="$(retrieve_pkey "${file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
@@ -64,10 +65,12 @@ function change_password()
         return
     fi
 
+    destroy_keyring
     echo "Enter new password for future operation:"
     local password_line="$(gen_password_line "${primary_key_hex}")"
 
     # confirm the password to ensure it can be unlocked!
+    destroy_keyring
     echo "Re-enter the new password to confirm correct spelling!"
     local conf_pkey="$(retrieve_pkey_from_line "${password_line}")"
 
@@ -147,8 +150,15 @@ function retrieve()
     fi
 }
 
+function destroy_keyring()
+{
+    keyctl unlink "%:${keyring_name}" @u
+}
+
 function getkey()
 {
+    local salt="$1"
+
     #see if the key is in the 'leo' keyring:
     local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null )"
 
@@ -159,9 +169,6 @@ function getkey()
     fi
 
     #otherwise derive the key then add it to the keyring.
-    local salt
-
-    salt="$1"
 
     echo "Enter password:" >&2
     read  -s pass
