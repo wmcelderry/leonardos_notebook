@@ -29,9 +29,6 @@ All of which should be pretty safe to share/useless without the corresponding ke
 
 # Great to hear your thoughts!
 I'd love to hear from anyone if they agree or disagree with the conclusion that sharing the encrypted notebook file will not reveal any information without revealing the key used for the specific label.
-I'm also interested to move it to a keyring based implementation, but haven't yet explored for a CLI - any pointers would be appreciated!
-
-
 
 # Forgotten a password?
 I can totally tell you your password, just email me... and give me all the computer resources until the end of time, plus a bit longer.  Now I write it out loud, it may be better if you don't forget your password, or only use it for information you are OK losing!

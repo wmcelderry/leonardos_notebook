@@ -30,6 +30,10 @@ shift
 value="$*"
 
 notebook_file="${base_dir}/data/my_primary_notebook"
+keyring_name="leonardo"
+key_prefix="leo"
+key_name="primary"
+key_period=300
 
 
 
@@ -140,6 +144,16 @@ function retrieve()
 
 function getkey()
 {
+    #see if the key is in the 'leo' keyring:
+    local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null )"
+
+    if [[ -n "${key_id}" ]] ; then
+        keyctl timeout "${key_id}" "${key_period}"
+        keyctl pipe "${key_id}" | xxd -p  | mk_one_line
+        return
+    fi
+
+    #otherwise derive the key then add it to the keyring.
     local salt
 
     salt="$1"
@@ -147,7 +161,7 @@ function getkey()
     echo "Enter password:" >&2
     read  -s pass
 
-    openssl kdf \
+    key="$(openssl kdf \
         -keylen 32 \
         -kdfopt "pass:${pass}" \
         -kdfopt "salt:${salt}" \
@@ -156,7 +170,17 @@ function getkey()
         -kdfopt p:16 \
         -kdfopt maxmem_bytes:10485760 \
         SCRYPT  \
-        | sed 's/://g'
+        | sed 's/://g')"
+
+    echo "${key}"
+
+    keyring_id="$(keyctl search @u keyring "${keyring_name}" 2>/dev/null)"
+    if [[ -z "${keyring_id}" ]]  ; then
+        keyring_id="$(keyctl newring "${keyring_name}" @u)"
+    fi
+
+    key_id="$(xxd -r -p <<< "${key}" | keyctl padd user "${key_prefix}:${key_name}" "${keyring_id}")"
+    keyctl timeout "${key_id}" "${key_period}"
 }
 
 function encrypt()
