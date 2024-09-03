@@ -137,18 +137,18 @@ function get_entry()
 
 function retrieve()
 {
-    val="$(get_entry "${label}")"
-    primary_key_hex="$(retrieve_pkey "${notebook_file}")"
+    local entry="$(get_entry "${label}")"
+    local primary_key_hex="$(retrieve_pkey "${notebook_file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
         echo "Incorrect key for decrypting." >&2
         return
     fi
 
-    if [[ -z "${val}" ]] ; then
+    if [[ -z "${entry}" ]] ; then
         echo "Cannot find entry for '${label}'" >&2
     else
-        decrypt_entry_with_key "${primary_key_hex}" "${val}"
+        decrypt_entry_with_key "${primary_key_hex}" "${entry}"
     fi
 }
 
