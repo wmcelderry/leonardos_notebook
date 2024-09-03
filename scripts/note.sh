@@ -59,7 +59,7 @@ function change_password()
     local file="${notebook_file}"
 
     destroy_keyring
-    echo "Unlocking the key material:" >&2
+    echo "Unlocking the key material, enter current password:" >&2
     local primary_key_hex="$(retrieve_pkey "${file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
