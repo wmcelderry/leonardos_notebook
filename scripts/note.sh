@@ -157,25 +157,14 @@ function destroy_keyring()
     keyctl unlink "%:${keyring_name}" @u
 }
 
-function getkey()
+function getDerivedKey()
 {
     local salt="$1"
-
-    #see if the key is in the 'leo' keyring:
-    local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null )"
-
-    if [[ -n "${key_id}" ]] ; then
-        keyctl timeout "${key_id}" "${key_period}"
-        keyctl pipe "${key_id}" | xxd -p  | mk_one_line
-        return
-    fi
-
-    #otherwise derive the key then add it to the keyring.
 
     echo "Enter password:" >&2
     read  -s pass
 
-    key="$(openssl kdf \
+    local dkey="$(openssl kdf \
         -keylen 32 \
         -kdfopt "pass:${pass}" \
         -kdfopt "salt:${salt}" \
@@ -186,14 +175,30 @@ function getkey()
         SCRYPT  \
         | sed 's/://g')"
 
-    echo "${key}"
+    echo "${dkey}"
+}
 
-    keyring_id="$(keyctl search @u keyring "${keyring_name}" 2>/dev/null)"
+function getCachedKey()
+{
+    local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null)"
+
+    if [[ -n "${key_id}" ]] ; then
+        keyctl timeout "${key_id}" "${key_period}"
+        keyctl pipe "${key_id}" | xxd -p  | mk_one_line
+    fi
+}
+
+function addKeyToKeyring()
+{
+    local key="$1"
+
+    local keyring_id="$(keyctl search @u keyring "${keyring_name}" 2>/dev/null)"
+
     if [[ -z "${keyring_id}" ]]  ; then
         keyring_id="$(keyctl newring "${keyring_name}" @u)"
     fi
 
-    key_id="$(xxd -r -p <<< "${key}" | keyctl padd user "${key_prefix}:${key_name}" "${keyring_id}")"
+    local key_id="$(xxd -r -p <<< "${key}" | keyctl padd user "${key_prefix}:${key_name}" "${keyring_id}")"
     keyctl timeout "${key_id}" "${key_period}"
 }
 
@@ -205,7 +210,7 @@ function encrypt()
     shift
     value_hex="$1"
 
-    local key="$(getkey "${salt}")"
+    local key="$(getDerivedKey "${salt}")"
 
     encrypt_using_key "${key}" "${value_hex}"
 }
@@ -340,7 +345,21 @@ function retrieve_pkey_from_line()
     local salt="${line:0:32}"
     local entry="${line:32}"
 
-    decrypt_entry "${salt}" "${entry}" | xxd -p  | mk_one_line
+    local pkey="$(getCachedKey)"
+
+    if [[ -n "${pkey}" ]] ; then
+        echo "${pkey}"
+        return
+    fi
+
+    local pkey="$(decrypt_entry "${salt}" "${entry}" | xxd -p  | mk_one_line)"
+
+    if [[ -z "${pkey}" ]] ; then
+        return
+    fi
+
+    addKeyToKeyring "${pkey}"
+    echo "${pkey}"
 }
 
 function list_entries()
