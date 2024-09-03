@@ -320,13 +320,30 @@ function decrypt_entry()
     shift
     local entry="$1"
 
-    local key="$(getkey "${salt}")"
 
     #trim the label:
     local label="${entry/::*/}"
     local cipher_text="${entry/*::/}"
 
-    decrypt_using_key "${key}" "${cipher_text}"
+    local limit=3
+    for((try=0;try < ${limit}; try++))
+    do
+        local key="$(getDerivedKey "${salt}")"
+        local plaintext="$(decrypt_using_key "${key}" "${cipher_text}")"
+
+        if [[ -n "${plaintext}" ]] ; then
+            echo -n "${plaintext}"
+            break
+        else
+            echo -n "Attempt $((try+1)) of ${limit}: Incorrect passphrase" >&2
+
+            if [[ "$((try+1))" -lt "${limit}" ]]; then
+                echo ", please try again." >&2
+            else
+                echo ", retry limit reached." >&2
+            fi
+        fi
+    done
 }
 
 function retrieve_pkey()
