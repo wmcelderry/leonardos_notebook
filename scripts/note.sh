@@ -120,7 +120,6 @@ function store()
         primary_key_hex="$(create_notebook_file "${notebook_file}")"
     fi
 
-    #echo encrypt_entry_with_key "${label}" "${primary_key_hex}" "${value}"
     encrypt_entry_with_key "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file}"
 }
 
@@ -282,8 +281,6 @@ function decrypt_using_key()
     local hmac="$(openssl mac -digest SHA256 -macopt "hexkey:${key}" HMAC <<< "${data}")"
 
     if [[ "${hmac,,*}"  == "${data_hmac}" ]]; then
-        #echo "Invalid key provided for this entry."
-    #else
         openssl enc -d -aes-256-ctr -nopad -a  -K "${key}" -iv "${iv}" <<< "${data}"
     fi
 }
