@@ -8,13 +8,14 @@ function usage()
 ${BASH_SOURCE[0]} <mode> <label> [<value...>]
 
   mode is one of:
-    "store"|"s"     <label> <value...>
-    "retrieve"|"r"  <label>
-    "paste"|"p"     <label>
-    "totp"|"t"      <lavel>
-    "del"|"rm"      <label>
+    "store" | "s"     <label> <value...>
+    "retrieve" | "r"  <label>
+    "paste" | "p"     <label>
+    "totp" | "t"      <label>
+    "del" | "rm"      <label>
     "change_password"|"cpw"
-    "list"|"l"
+    "list" | "l"
+    "clear" | "c"
 
   store     adds a new entry
   retrieve  recovers an entry
@@ -24,6 +25,7 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
   change_password
             allows changing the password
   list      lists the entries
+  clear     clear any cached key from the keyring
 EOF
 }
 
@@ -377,6 +379,11 @@ case "${mode}" in
         ;&
     totp )
         oathtool --totp --base32 "$(retrieve "$@" )" | xclip -i -selection clipboard -l 1 -quiet
+        ;;
+    c )
+        ;&
+    clear )
+        destroy_keyring
         ;;
     l )
         ;&
