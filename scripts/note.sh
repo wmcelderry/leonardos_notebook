@@ -78,6 +78,7 @@ function change_password()
 
     if [[ "${conf_pkey,,*}" != "${primary_key_hex,,*}" ]] ; then
         echo "New passwords do not match!" >&2
+        destroy_keyring
     else
         sed -i "1s!.*!${password_line}!g" "${file}"
     fi
