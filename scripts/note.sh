@@ -138,12 +138,12 @@ function retrieve()
     primary_key_hex="$(retrieve_pkey "${notebook_file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
-        echo "Incorrect key for decrypting."
+        echo "Incorrect key for decrypting." >&2
         return
     fi
 
     if [[ -z "${val}" ]] ; then
-        echo "Cannot find entry for '${label}'"
+        echo "Cannot find entry for '${label}'" >&2
     else
         decrypt_entry_with_key "${primary_key_hex}" "${val}"
     fi
@@ -299,7 +299,7 @@ function decrypt_entry_with_key()
     plain_text="$(decrypt_using_key "${key}" "${cipher_text}")"
 
     if [[ -z "${plain_text}" ]]; then
-        echo "Invalid key provided for this entry."
+        echo "Invalid key provided for this entry." >& 2
     else
         echo "${plain_text}"
     fi
