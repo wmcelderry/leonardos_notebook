@@ -14,7 +14,7 @@ function usage()
 ${BASH_SOURCE[0]} <mode> <label> [<value...>]
 
   mode is one of:
-    "store" | "s"     <label> <value...>
+    "store" | "s"     <label> [<value...>]
     "retrieve" | "r"  <label>
     "paste" | "p"     <label>
     "totp" | "t"      <label>
