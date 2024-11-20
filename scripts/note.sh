@@ -14,21 +14,25 @@ function usage()
 ${BASH_SOURCE[0]} <mode> <label> [<value...>]
 
   mode is one of:
-    "store" | "s"     <label> [<value...>]
-    "gen_64" | "g64"     <label>
-    "retrieve" | "r"  <label>
-    "paste" | "p"     <label>
-    "totp" | "t"      <label>
-    "del" | "rm"      <label>
+    "store" | "s"         <label> [<value...>]
+    "gen_64" | "g64"      <label>
+    "gen_words" | "gw"    <label>
+    "retrieve" | "r"      <label>
+    "paste" | "p"         <label>
+    "paste_prim" | "pp"   <label>
+    "totp" | "t"          <label>
+    "del" | "rm"          <label>
     "change_password"|"cpw"
     "list" | "l"
     "clear" | "c"
 
-  store     adds a new entry
-  gen_b64   generate a random base64 key and store it
-  retrieve  recovers an entry
-  paste     recovers an entry to the clipboard.
-  totp      recovers an entry, uses it as input for oathtool totp and puts that on the clipboard.
+  store       adds a new entry, if there is no value it is taken from stdin.
+  gen_b64     generate a random base64 key and store it
+  gen_words   generate a random word key and store it
+  retrieve    recovers an entry
+  paste       recovers an entry to the clipboard.
+  paste_prim  recovers an entry to the primary selection.
+  totp        recovers an entry, uses it as input for oathtool totp and puts that on the clipboard.
   rm        removes an entry
   change_password
             allows changing the password
@@ -85,6 +89,11 @@ case "${mode}" in
         delete_entry "${label}" "${notebook_file}"
         ;;
 
+    pp )
+        ;&
+    paste_prim )
+        retrieve "$@" | xclip -i -selection primary -l 1 -quiet
+        ;;
     p )
         ;&
     paste )
