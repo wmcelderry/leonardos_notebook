@@ -46,7 +46,7 @@ function store()
         primary_key_hex="$(create_notebook_file "${notebook_file}")"
     fi
 
-    [[ -z "${value}" ]] && value="$(cat)"
+    [[ -z "${value}" ]] && echo "Taking value from standard in now..." >&2 && value="$(cat)"
     encrypt_entry_with_key "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file}"
 }
 
