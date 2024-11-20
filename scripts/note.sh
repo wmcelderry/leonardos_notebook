@@ -23,7 +23,7 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
     "totp" | "t"          <label>
     "del" | "rm"          <label>
     "change_password"|"cpw"
-    "list" | "l"
+    "list" | "l" | "ls"
     "clear" | "c"
 
   store       adds a new entry, if there is no value it is taken from stdin.
@@ -111,6 +111,8 @@ case "${mode}" in
         destroy_keyring
         ;;
     l )
+        ;&
+    ls )
         ;&
     list )
         list_entries
