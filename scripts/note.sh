@@ -15,6 +15,7 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
 
   mode is one of:
     "store" | "s"     <label> [<value...>]
+    "gen_64" | "g64"     <label>
     "retrieve" | "r"  <label>
     "paste" | "p"     <label>
     "totp" | "t"      <label>
@@ -24,6 +25,7 @@ ${BASH_SOURCE[0]} <mode> <label> [<value...>]
     "clear" | "c"
 
   store     adds a new entry
+  gen_b64   generate a random base64 key and store it
   retrieve  recovers an entry
   paste     recovers an entry to the clipboard.
   totp      recovers an entry, uses it as input for oathtool totp and puts that on the clipboard.
@@ -61,6 +63,12 @@ case "${mode}" in
     store )
         store
             ;;
+    g64 )
+	    ;&
+    gen_64 )
+	    value="$(generate_b64_pass)"
+	    store
+	    ;;
     r )
         ;&
     retrieve )
