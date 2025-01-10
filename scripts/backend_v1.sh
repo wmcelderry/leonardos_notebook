@@ -1,14 +1,14 @@
-function create_notebook_file()
+function create_notebook_file_v1()
 {
     local file="${1}"
     local primary_key_hex="$(openssl rand -hex 32)"
 
-    gen_password_line "${primary_key_hex}" >> "${file}"
+    gen_password_line_v1 "${primary_key_hex}" >> "${file}"
 
     echo "${primary_key_hex}"
 }
 
-function gen_password_line()
+function gen_password_line_v1()
 {
     local primary_key_hex="$1"
 
@@ -18,12 +18,12 @@ function gen_password_line()
     echo  -n "${salt}"
 
     #store the primary key, protected by the password
-    encrypt "${salt}" "${primary_key_hex}"
+    encrypt_v1 "${salt}" "${primary_key_hex}"
 }
 
 
 
-function get_entry()
+function get_entry_v1()
 {
     local label
 
@@ -31,26 +31,26 @@ function get_entry()
     [[ -e "${notebook_file}" ]] && sed -n "/^${label}::/{p;q}" "${notebook_file}"
 }
 
-function store()
+function store_v1()
 {
     local salt
 
     if [[ -e "${notebook_file}" ]] ; then
-        delete_entry "${label}" "${notebook_file}"
-        primary_key_hex="$(retrieve_pkey "${notebook_file}")"
+        delete_entry_v1 "${label}" "${notebook_file}"
+        primary_key_hex="$(retrieve_pkey_v1 "${notebook_file}")"
         if [[ -z "${primary_key_hex}" ]] ; then
             echo "Incorrect key for encrypting." >&2
             return
         fi
     else
-        primary_key_hex="$(create_notebook_file "${notebook_file}")"
+        primary_key_hex="$(create_notebook_file_v1 "${notebook_file}")"
     fi
 
     [[ -z "${value}" ]] && echo "Taking value from standard in now..." >&2 && value="$(cat)"
-    encrypt_entry_with_key "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file}"
+    encrypt_entry_with_key_v1 "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file}"
 }
 
-function encrypt()
+function encrypt_v1()
 {
     local salt value_hex
 
@@ -58,13 +58,13 @@ function encrypt()
     shift
     value_hex="$1"
 
-    local key="$(getDerivedKey "${salt}")"
+    local key="$(getDerivedKey_v1 "${salt}")"
 
-    encrypt_using_key "${key}" "${value_hex}"
+    encrypt_using_key_v1 "${key}" "${value_hex}"
 }
 
 
-function getDerivedKey()
+function getDerivedKey_v1()
 {
     local salt="$1"
 
@@ -87,7 +87,7 @@ function getDerivedKey()
 
 
 
-function getCachedKey()
+function getCachedKey_v1()
 {
     local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null)"
 
@@ -99,7 +99,7 @@ function getCachedKey()
 
 
 
-function addKeyToKeyring()
+function addKeyToKeyring_v1()
 {
     local key="$1"
 
@@ -115,7 +115,7 @@ function addKeyToKeyring()
 
 
 
-function encrypt_using_key()
+function encrypt_using_key_v1()
 {
 
     local key="$1"
@@ -139,7 +139,7 @@ function encrypt_using_key()
     echo "$(xxd -r -p <<< "${iv}${hmac}" | base64 | mk_one_line)${data}"
 }
 
-function encrypt_entry_with_key()
+function encrypt_entry_with_key_v1()
 {
     local label primary_key_hex value_hex
     label="$1"
@@ -148,7 +148,7 @@ function encrypt_entry_with_key()
     shift
     value_hex="$(xxd -p <<< "${*}")"
 
-    cipher_text=$(encrypt_using_key "${primary_key_hex}"  "${value_hex}")
+    cipher_text=$(encrypt_using_key_v1 "${primary_key_hex}"  "${value_hex}")
 
     echo "${label}::${cipher_text}"
 }
@@ -168,7 +168,7 @@ function encrypt_entry()
 }
 
 
-function decrypt_using_key()
+function decrypt_using_key_v1()
 {
     local key="$1"
     shift
@@ -188,7 +188,7 @@ function decrypt_using_key()
     fi
 }
 
-function decrypt_entry_with_key()
+function decrypt_entry_with_key_v1()
 {
     local key="$1"
     shift
@@ -199,7 +199,7 @@ function decrypt_entry_with_key()
     local label="${entry/::*/}"
     local cipher_text="${entry/*::/}"
 
-    plain_text="$(decrypt_using_key "${key}" "${cipher_text}")"
+    plain_text="$(decrypt_using_key_v1 "${key}" "${cipher_text}")"
 
     if [[ -z "${plain_text}" ]]; then
         echo "Invalid key provided for this entry." >& 2
@@ -208,7 +208,7 @@ function decrypt_entry_with_key()
     fi
 }
 
-function decrypt_entry()
+function decrypt_entry_v1()
 {
 
     local salt="$1"
@@ -223,8 +223,8 @@ function decrypt_entry()
     local limit=3
     for((try=0;try < ${limit}; try++))
     do
-        local key="$(getDerivedKey "${salt}")"
-        local plaintext="$(decrypt_using_key "${key}" "${cipher_text}")"
+        local key="$(getDerivedKey_v1 "${salt}")"
+        local plaintext="$(decrypt_using_key_v1 "${key}" "${cipher_text}")"
 
         if [[ -n "${plaintext}" ]] ; then
             echo -n "${plaintext}"
@@ -241,36 +241,36 @@ function decrypt_entry()
     done
 }
 
-function retrieve_pkey()
+function retrieve_pkey_v1()
 {
     local file="$1"
 
     local first_line="$(sed -n '1{p;q}' "${file}")"
 
-    retrieve_pkey_from_line  "${first_line}"
+    retrieve_pkey_from_line_v1  "${first_line}"
 }
 
-function retrieve_pkey_from_line()
+function retrieve_pkey_from_line_v1()
 {
     local line="${1}"
 
     local salt="${line:0:32}"
     local entry="${line:32}"
 
-    local pkey="$(getCachedKey)"
+    local pkey="$(getCachedKey_v1)"
 
     if [[ -n "${pkey}" ]] ; then
         echo "${pkey}"
         return
     fi
 
-    local pkey="$(decrypt_entry "${salt}" "${entry}" | xxd -p  | mk_one_line)"
+    local pkey="$(decrypt_entry_v1 "${salt}" "${entry}" | xxd -p  | mk_one_line)"
 
     if [[ -z "${pkey}" ]] ; then
         return
     fi
 
-    addKeyToKeyring "${pkey}"
+    addKeyToKeyring_v1 "${pkey}"
     echo "${pkey}"
 }
 

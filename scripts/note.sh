@@ -4,8 +4,7 @@
 script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 base_dir="$(dirname "${script_dir}" )"
 
-source  "${script_dir}/functions_v1.sh"
-source  "${script_dir}/backend_v1.sh"
+source  "${script_dir}/interface.sh"
 source  "${script_dir}/utils.sh"
 
 function usage()
