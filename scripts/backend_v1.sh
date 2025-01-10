@@ -153,21 +153,6 @@ function encrypt_entry_with_key_v1()
     echo "${label}::${cipher_text}"
 }
 
-function encrypt_entry()
-{
-    local salt label value_hex
-    salt="$1"
-    shift
-    label="$1"
-    shift
-    value_hex="$(xxd -p <<< "${*}")"
-
-    cipher_text=$(encrypt "${salt}" "${value_hex}")
-
-    echo "${label}::${cipher_text}"
-}
-
-
 function decrypt_using_key_v1()
 {
     local key="$1"
