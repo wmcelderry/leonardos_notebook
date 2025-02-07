@@ -116,6 +116,9 @@ case "${mode}" in
     list )
         list_entries
         ;;
+    migrate )
+        migrate_v1_v2
+        ;;
     * )
         usage
         ;;
