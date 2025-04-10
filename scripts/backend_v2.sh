@@ -342,21 +342,45 @@ function double_decrypt_string()
     decrypt_string "${ekey_hex}" "${ecipher_b64}"
 }
 
-function add_entry()
+
+function insert_entry()
 {
-    file="$1"
+    local file="$1"
     shift
-    label="$1"
+    local label="$1"
+    shift
+    local line="$1" #4 is before the first entry that is there, 5 is after the first entry.
+    shift
+    local value="$1"
 
     local mac_b64="$(get_uid "${file}" "${label}" )"
-
     local pkey_hex="$(get_primary_key_v2 "${file}")"
 
-    local value
+    if [[ -z "${value}" ]] ; then
+	    read -p "Enter the password to store now:" value >&2
+    fi
 
-
-
-    read -p "Enter the password to store now:" value >&2
     sed -i "/^$(echo -n ${mac_b64} | sed 's/\//\\\//g' )::/d" ${file}
-    echo "${mac_b64}::$(double_encrypt_string "${pkey_hex}" "$(echo ${label}::${value} | to_hex)")" >> "${file}"
+
+    cmd="a "
+    if [[ "${line}" -lt 4 ]] ; then
+	    echo "ERROR: invalid position within the file given: ${line}" >&2
+	    return -1
+    fi
+
+    [[ ! -f "${file}" ]] && (echo creating: ${file}; touch "${file}" )
+    sed -i "${line}${cmd} ${mac_b64}::$(double_encrypt_string "${pkey_hex}" "$(echo ${label}::${value} | to_hex)")" "${file}"
+}
+
+function add_entry()
+{
+    local file="$1"
+    shift
+    local label="$1"
+    shift
+    local value="$1"
+
+    line="$(( $( ( list_entries_v2 "${file}" ; echo "${label}" ) | sort | number | grep "${label}" | cut -d' ' -f 1 ) + 3 ))" # add three to account for 4 header lines!
+
+    insert_entry "${file}" "${label}" "${line}" "${value}"
 }
