@@ -67,6 +67,12 @@ case "${mode}" in
     store )
         store
             ;;
+    gw )
+	    ;&
+    gen_words )
+	    value="$(generate_words_pass)"
+	    store
+	    ;;
     g64 )
 	    ;&
     gen_64 )
