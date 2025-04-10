@@ -1,24 +1,24 @@
 
 function list_entries_v1()
 {
-    sed '1d;s/^\(.\+\)::.*$/\1/' "${notebook_file}"
+    sed '1d;s/^\(.\+\)::.*$/\1/' "${notebook_file_v1}"
 }
 
 function delete_entry_v1()
 {
-    local label notebook_file
+    local label notebook_file_v1
 
     label="$1"
-    notebook_file="$2"
+    notebook_file_v1="$2"
 
-    sed -i "/^${label}::/d" "${notebook_file}"
+    sed -i "/^${label}::/d" "${notebook_file_v1}"
 }
 
 
 
 function change_password_v1()
 {
-    local file="${notebook_file}"
+    local file="${notebook_file_v1}"
 
     destroy_keyring_v1
     echo "Unlocking the key material, enter current password:" >&2
@@ -50,12 +50,13 @@ function change_password_v1()
 
 function destroy_keyring_v1()
 {
-    keyctl unlink "%:${keyring_name}" @u
+    keyctl unlink "%:${keyring_name_v1}" @u
 }
+
 function retrieve_v1()
 {
     local entry="$(get_entry_v1 "${label}")"
-    local primary_key_hex="$(retrieve_pkey_v1 "${notebook_file}")"
+    local primary_key_hex="$(retrieve_pkey_v1 "${notebook_file_v1}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
         echo "Incorrect key for decrypting." >&2

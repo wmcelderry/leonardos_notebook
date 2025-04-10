@@ -12,7 +12,7 @@ function gen_password_line_v1()
 {
     local primary_key_hex="$1"
 
-    #put the KDF salt and primary key in the notebook_file.
+    #put the KDF salt and primary key in the notebook_file_v1.
     local salt="$(openssl rand -hex 16)"
 
     echo  -n "${salt}"
@@ -28,26 +28,26 @@ function get_entry_v1()
     local label
 
     label="$1"
-    [[ -e "${notebook_file}" ]] && sed -n "/^${label}::/{p;q}" "${notebook_file}"
+    [[ -e "${notebook_file_v1}" ]] && sed -n "/^${label}::/{p;q}" "${notebook_file_v1}"
 }
 
 function store_v1()
 {
     local salt
 
-    if [[ -e "${notebook_file}" ]] ; then
-        delete_entry_v1 "${label}" "${notebook_file}"
-        primary_key_hex="$(retrieve_pkey_v1 "${notebook_file}")"
+    if [[ -e "${notebook_file_v1}" ]] ; then
+        delete_entry_v1 "${label}" "${notebook_file_v1}"
+        primary_key_hex="$(retrieve_pkey_v1 "${notebook_file_v1}")"
         if [[ -z "${primary_key_hex}" ]] ; then
             echo "Incorrect key for encrypting." >&2
             return
         fi
     else
-        primary_key_hex="$(create_notebook_file_v1 "${notebook_file}")"
+        primary_key_hex="$(create_notebook_file_v1 "${notebook_file_v1}")"
     fi
 
     [[ -z "${value}" ]] && echo "Taking value from standard in now..." >&2 && value="$(cat)"
-    encrypt_entry_with_key_v1 "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file}"
+    encrypt_entry_with_key_v1 "${label}" "${primary_key_hex}" "${value}" >> "${notebook_file_v1}"
 }
 
 function encrypt_v1()
@@ -89,7 +89,7 @@ function getDerivedKey_v1()
 
 function getCachedKey_v1()
 {
-    local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null)"
+    local key_id="$(keyctl search "%:${keyring_name_v1}" user "${key_prefix}:${key_name}" 2>/dev/null)"
 
     if [[ -n "${key_id}" ]] ; then
         keyctl timeout "${key_id}" "${key_period}"
@@ -103,10 +103,10 @@ function addKeyToKeyring_v1()
 {
     local key="$1"
 
-    local keyring_id="$(keyctl search @u keyring "${keyring_name}" 2>/dev/null)"
+    local keyring_id="$(keyctl search @u keyring "${keyring_name_v1}" 2>/dev/null)"
 
     if [[ -z "${keyring_id}" ]]  ; then
-        keyring_id="$(keyctl newring "${keyring_name}" @u)"
+        keyring_id="$(keyctl newring "${keyring_name_v1}" @u)"
     fi
 
     local key_id="$(xxd -r -p <<< "${key}" | keyctl padd user "${key_prefix}:${key_name}" "${keyring_id}")"
