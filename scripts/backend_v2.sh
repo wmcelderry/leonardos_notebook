@@ -8,7 +8,7 @@ password_refresh_period=180
 
 key_period=5
 
-source errorcodes_v2.sh
+source "${script_dir}/errorcodes_v2.sh"
 
 function version_header()
 {

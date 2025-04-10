@@ -1,4 +1,4 @@
-source errorcodes_v2.sh
+source "${script_dir}/errorcodes_v2.sh"
 
 function list_entries_v2()
 {
