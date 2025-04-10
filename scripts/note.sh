@@ -91,8 +91,6 @@ key_period=300
 
 
 case "${action}" in
-
-
     r )
         ;&
     retrieve )
@@ -145,6 +143,12 @@ case "${action}" in
         value="$(generate_b64_pass)"
         add_entry "${notebook_file_v2}" "${label}" "${value}"
         ;;
+    gw )
+	;&
+    gen_words )
+        value="$(generate_words_pass)"
+        add_entry "${notebook_file_v2}" "${label}" "${value}"
+	;;
 
     pp )
         ;&
