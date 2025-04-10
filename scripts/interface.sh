@@ -7,6 +7,8 @@
 
 source  "${script_dir}/backend_v1.sh"
 source  "${script_dir}/functions_v1.sh"
+source  "${script_dir}/backend_v2.sh"
+source  "${script_dir}/functions_v2.sh"
 
 #backend interface but used directly from note.sh
 function store()
