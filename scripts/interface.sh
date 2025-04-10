@@ -23,6 +23,7 @@ function store()
 
 function retrieve()
 {
+	#${notebook_file_v1} is the file to operate in
 	#${label} is the label to retrieve
 	retrieve_v1
 }
@@ -60,5 +61,22 @@ function list_entries()
 function migrate_v1_v2()
 {
 	#pass it on.
+	#mk v2 notebook
+	echo "Creating the V2 notebook:"
+
+	#local notebook_file_v2="notebook_v2.enc"
+	if [[ -e "${notebook_file_v2}" ]] ; then
+		echo "Destroying old notebook!"
+		rm "${notebook_file_v2}"
+	fi
+	create_notebook_file_v2 "${notebook_file_v2}"
+
+	echo "Transferring entries from V1 to V2"
+
+	for label in $(list_entries_v1)
+	do
+		echo "  ${label}(v1) --> ${label}(v2)"
+		add_entry "${notebook_file_v2}" "${label}" "$(retrieve_v1)"
+	done
 	echo no-op > /dev/null
 }

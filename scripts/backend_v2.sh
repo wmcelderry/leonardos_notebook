@@ -1,7 +1,3 @@
-keyring_name=leo_dev
-key_prefix=leo_dev_pre
-key_name=dev_key
-
 pkey_refresh_period=365
 ekey_refresh_period=30
 password_refresh_period=180
@@ -63,10 +59,8 @@ function extract_enc_header()
     read salt_b64
     read enc_header_b64
 
-    echo "$(echo ${salt_b64} | base64 -d | to_hex | mk_one_line)"
+    echo "${salt_b64}"
     echo "${enc_header_b64}"
-
-    enc_header_hex="$(echo ${enc_header_b64} | base64 -d | to_hex | mk_one_line)"
 }
 
 
@@ -74,9 +68,15 @@ function retrieve_pkey_v2()
 {
     local file="${1}"
 	#extract the primary key from the cache or the file.
-	enc_header_b64="$(sed '5q' "${file}" | extract_enc_header)"
-	salt_hex="$(echo "${enc_header_b64}" | sed -n '1p;q')";
-	enc_pkey_b64="$(echo "${enc_header_b64}" | sed -n '2p')";
+	local enc_header_b64="$(sed '4q' "${file}" | extract_enc_header)"
+	retrieve_pkey_from_enc_header "${enc_header_b64}"
+}
+
+function retrieve_pkey_from_enc_header()
+{
+	local enc_header_b64="${1}"
+	local salt_hex="$(echo "${enc_header_b64}" | sed -n '1p;q' | base64 -d | to_hex | mk_one_line)";
+	local enc_pkey_b64="$(echo "${enc_header_b64}" | sed -n '2p')";
 
 	local derived_key_hex="$(getDerivedKey "${salt_hex}")"
 
@@ -126,7 +126,6 @@ function get_uid()
 
     uid="$(echo -n ${label} | hmac "${pkey_hex}" | from_hex | base64 | mk_one_line)"
 
-    #grep -q "^${uid}" ${file} && echo ${uid}
     echo ${uid}
 }
 
@@ -169,7 +168,7 @@ function getDerivedKey()
 
 function getCachedKey()
 {
-    local key_id="$(keyctl search "%:${keyring_name}" user "${key_prefix}:${key_name}" 2>/dev/null)"
+    local key_id="$(keyctl search "%:${keyring_name_v2}" user "${key_prefix}:${key_name}" 2>/dev/null)"
 
     if [[ -n "${key_id}" ]] ; then
         keyctl timeout "${key_id}" "${key_period}"
@@ -183,10 +182,10 @@ function addKeyToKeyring()
 {
     local key="$1"
 
-    local keyring_id="$(keyctl search @u keyring "${keyring_name}" 2>/dev/null)"
+    local keyring_id="$(keyctl search @u keyring "${keyring_name_v2}" 2>/dev/null)"
 
     if [[ -z "${keyring_id}" ]]  ; then
-        keyring_id="$(keyctl newring "${keyring_name}" @u)"
+        keyring_id="$(keyctl newring "${keyring_name_v2}" @u)"
     fi
 
     local key_id="$(echo -n "${key}" | from_hex | keyctl padd user "${key_prefix}:${key_name}" "${keyring_id}")"
@@ -292,6 +291,7 @@ function decrypt_string()
     local data_b64="$1"
     shift
     local nopad="$1"
+	#nopad is used when we already know the data has been padded by earlier encyption and prevents adding extra padding block.
 
     local data_hex="$(b64_to_bin "${data_b64}" | to_hex | mk_one_line)"
 
@@ -306,7 +306,7 @@ function decrypt_string()
     if [[ "${hmac_hex,,*}"  == "${data_hmac_hex,,*}" ]]; then
         hex_to_bin "${data_hex}" | openssl enc -d -aes-256-cbc ${nopad:+-nopad} -K "${key_hex}" -iv "${iv_hex}" | to_hex | mk_one_line
     else
-        echo "HMAC does not match: ${hmac_hex,,*} != ${data_hmac_hex,,*}" >&2
+        echo "HMAC does not match" >&2 #: ${hmac_hex,,*} != ${data_hmac_hex,,*}" >&2
 		return $E_INCORRECT_MAC
     fi
 }

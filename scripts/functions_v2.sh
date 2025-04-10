@@ -34,24 +34,31 @@ function delete_entry_v2()
     fi
 
     local mac_b64="$(get_uid "${file}" "${label}" )"
-    local pkey_hex="$(get_primary_key_v2 "${file}")"
 
     sed -i "/^$(echo -n ${mac_b64} | sed 's/\//\\\//g' )::/d" ${file}
 }
 
 
 
-function change_password()
+function change_password_v2()
 {
-    local file="${notebook_file}"
+    local file="${1}"
+
+
+    #Header format:
+	    #Version (2.0)
+	    #salt (b64)
+	    #encrypted pkey
+	    #fileheader (dates)
+    #should update file header?)
 
     if [[ ! -f "${file}" ]] ; then
    	 echo "File does not exist: ${file}" >&2
 	 return  ${E_NO_FILE}
     fi
 
-    destroy_keyring
-    echo "Unlocking the key material, enter current password:" >&2
+    destroy_keyring_v2
+    echo "Unlocking the notebook's key material, enter current password:" >&2
     local primary_key_hex="$(retrieve_pkey_v2 "${file}")"
 
     if [[ -z "${primary_key_hex}" ]] ; then
@@ -60,18 +67,23 @@ function change_password()
     fi
 
     echo "Enter new password for future operation:" >&2
-    local password_line="$(gen_password_line "${primary_key_hex}")"
+    local enc_header="$(encryption_header "${primary_key_hex}")"
 
     # confirm the password to ensure it can be unlocked!
-    destroy_keyring
+    destroy_keyring_v2
     echo "Re-enter the new password to confirm correct spelling!" >&2
-    local conf_pkey="$(retrieve_pkey_from_line "${password_line}")"
+    local conf_pkey="$(retrieve_pkey_from_enc_header "${enc_header}")"
 
     if [[ "${conf_pkey,,*}" != "${primary_key_hex,,*}" ]] ; then
         echo "New passwords do not match!" >&2
-        destroy_keyring
+        destroy_keyring_v2
     else
-        sed -i "1s!.*!${password_line}!g" "${file}"
+	salt_line="$(echo "${enc_header}" | sed -n '1{p;q}')"
+	pkey_line="$(echo "${enc_header}" | sed -n '2p')"
+	#replace lines 2 and 3.
+	sed -i "${file}"  \
+		-e "$(printf "2{i ${salt_line}\n;d}")"\
+		-e "$(printf "3{i ${pkey_line}\n;d}")"
     fi
 }
 
@@ -102,12 +114,16 @@ function retrieve_v2()
     fi
 
     if [[ -n "${response}" ]] ; then
-        echo "${response}"
+        echo "${response#*::}"
     else
-        echo "No entry found: ${label}" >&2
+        echo "--- No entry found: ${label}" >&2
     fi
 }
 
+function destroy_keyring_v2()
+{
+    keyctl unlink "%:${keyring_name_v2}" @u
+}
 
 #To decide:
 # -- rekey date on a per entry or a per file basis?
